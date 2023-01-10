@@ -1,25 +1,34 @@
 ---
-# Temporary fix untill the pull request gets merged
-- name: Download the patched nix-multi-user.rpm
-  unarchive:
-    src: "https://github.com/nix-community/nix-installers/files/9940128/nix-multi-user.rpm.zip"
-    dest: /tmp
-    remote_src: yes
-- name: Get sha256 sum of nix-multi-user.rpm
-  stat:
-    path: /tmp/nix-multi-user.rpm
-    checksum_algorithm: sha256
-    get_checksum: yes
-  register: sha256sum
-- name: Verify sha256sum of nix-multi-user.rpm
-  fail:
-    msg: "Failure, file is not correct."
-  when: sha256sum.stat.checksum != '8cec0c361af8e9c30d89c68b15740318ee5c0c845a82cee0556c3dfaf1479059'
-- name: Install the nix package manager
-  rpm_ostree_pkg:
-    name: /tmp/nix-multi-user.rpm
-    state: present
-- name: Remove the nix-multi-user.rpm file
-  file:
-    path: /tmp/nix-multi-user.rpm
-    state: absent
+- name: Install nix
+  block:
+  - name: Check if nix is already installed
+    rpm_ostree_pkg:
+      name: nix-multi-user
+      state: present
+  rescue:
+  # Temporary fix untill the pull request gets merged
+  - name: Download the patched nix-multi-user.rpm
+    unarchive:
+      src: "https://github.com/nix-community/nix-installers/files/9940128/nix-multi-user.rpm.zip"
+      dest: /tmp
+      remote_src: yes
+  - name: Get sha256 sum of nix-multi-user.rpm
+    stat:
+      path: /tmp/nix-multi-user.rpm
+      checksum_algorithm: sha256
+      get_checksum: yes
+    register: sha256sum
+  - name: Verify sha256sum of nix-multi-user.rpm
+    fail:
+      msg: "Failure, file is not correct."
+    when: sha256sum.stat.checksum != '8cec0c361af8e9c30d89c68b15740318ee5c0c845a82cee0556c3dfaf1479059'
+  - name: Install the nix package manager
+    rpm_ostree_pkg:
+      name: /tmp/nix-multi-user.rpm
+      state: present
+  - name: Remove the nix-multi-user.rpm file
+    file:
+      path: /tmp/nix-multi-user.rpm
+      state: absent
+  - name: Reboot
+    reboot: 
